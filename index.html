@@ -1,0 +1,81 @@
+<head>
+<script type="text/javascript">
+window.onload = function() {
+
+  // Canvas stuff...
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext('2d');
+  ctx.lineWidth = 25;
+  ctx.lineCap = "round";
+
+  // Global mutable state
+  var mouseIsDown = false;
+  var mouseLastX = null;
+  var mouseLastY = null;
+
+  // Whenever you mouse up/down, start/stop tracking the mouse
+  canvas.onmousedown = function(e) { mouseIsDown = true; }
+  canvas.onmouseup   = function(e) { mouseIsDown = false; }
+
+  // Moving will cause something to draw, but ONLY if mouse is down
+  canvas.onmousemove = function(e) {
+    if (mouseIsDown) {
+      ctx.beginPath();
+      ctx.moveTo(mouseLastX, mouseLastY);
+      ctx.lineTo(e.x, e.y);
+      ctx.stroke();
+    }
+
+    mouseLastX = e.x;
+    mouseLastY = e.y;
+  }
+
+  // Button stuff...
+  const button = document.getElementById("button");
+  button.onclick = function(e) {
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    // This hex string ends up being 2 * 784 elements long, each 2 characters a number in [0,256)
+    var hexData = ""
+    for (var y = 0; y < 28; y++) {
+      for (var x = 0; x < 28; x++) {
+
+        // Tally up the number of black pixels in this rectangle
+        var filledCount = 0
+        for (var dy = 0; dy < 15; dy++) {
+          for (var dx = 0; dx < 15; dx++) {
+            const y1 = y * 15 + dy;
+            const x1 = x * 15 + dx;
+
+            if (data[4 * (y1 * 420 + x1) + 3] != 0) {
+              filledCount++;
+            }
+          }
+        }
+
+        // Add to the data array the proportion of pixels which were black
+        const pixel = Math.round(filledCount * 255.0 / 225.0);
+        const hexPixel = Math.max(0,Math.min(pixel,255)).toString(16);
+        hexData += (hexPixel.length == 1) ? "0" + hexPixel : hexPixel;
+      }
+    }
+
+    console.log(hexData)
+
+    // Make the get query
+    const xhttp = new XMLHttpRequest();
+    xhttp.open("GET", "whats_my_number?" + hexData, false);
+    xhttp.send();
+
+    // Response
+    alert(xhttp.responseText)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+}
+</script>
+</head>
+<body>
+  <canvas id="canvas" width="420px" height="420px" style="border: 5px solid #444;"></canvas></br>
+  <button id="button" style="width: 430px; height: 40px" type="button">What's my number?</button>
+</body>
