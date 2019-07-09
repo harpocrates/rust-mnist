@@ -1,6 +1,7 @@
 use std::ops::MulAssign;
 use std::ops::AddAssign;
 use std::cmp::Ordering;
+use std::time::Instant;
 
 use ndarray::Array1;
 use super::cost::Cost;
@@ -181,6 +182,7 @@ impl Network {
 
         // How many times over will we look at every bit of data?
         for i in 0..epochs {
+            let start_epoch = Instant::now();
 
             // Shuffle the training data into different chunks and process these
             training.shuffle(&mut rng);
@@ -189,10 +191,16 @@ impl Network {
             }
 
             // Display training progress
+            let epoch_ms = Instant::now().duration_since(start_epoch).as_millis();
             if let Some(test) = test {
-                println!("Epoch {} ({} / {})", i, self.evaluate(test), test.len());
+                println!(
+                    "Epoch {} ({} / {}), {} ms elapsed",
+                    i,
+                    self.evaluate(test), test.len(),
+                    epoch_ms
+                );
             } else {
-                println!("Epoch {}", i);
+                println!("Epoch {}, {} ms elapsed", i, epoch_ms);
             }
         }
 
